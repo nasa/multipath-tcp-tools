@@ -1,0 +1,162 @@
+.\" Man page for mptcpsplit
+.\" 
+.TH man 1 "22 May 2017" "0.1" "mptcpsplit man page"
+.SH NAME
+mptcpsplit \- Split out an individual MPTCP connection from a pcap file.
+.SH SYNOPSIS
+.BR "mptcpsplit " "[" "-h" "] [" "-l" "] [" "-n"
+.IR "connection_num" "]"
+.RB "[" "-o"
+.IR "outfile" "] "
+.I "pcap_filename"
+.SH DESCRIPTION
+.B mptcpsplit
+is a tool for learning about MPTCP connections in the pcap file
+.IR "pcap_filename" "."
+There are currently three main modes of operation for
+.B mptcpsplit.
+.TS
+tab (@);
+l lx.
+1@T{
+Listing out all MPTCP connections in a pcap with the
+.B -l
+option. Connections are only listed
+when enough information about the MP_CAPABLE handshake is available
+in the pcap. If a trace only contains packets from the middle of an MPTCP
+connection it will not be listed.
+T}
+2@T{
+Splitting out a single MPTCP connection into a separate pcap with use of
+the
+.B -n
+option. The numerical argument
+.I connection_num
+selects which connection will be output using a 0-based index. The indices
+for each available connection are in the output of the
+.B -l
+option.
+T}
+3@T{
+Splitting out TCP packets (that may potentially carry MPTCP options)
+that are not able to be considered as part of a particular MPTCP
+connection in
+.IR "pcap_filename" "."
+For example, plain TCP packets or 
+MP_JOIN subflows whose token does not match any connection in
+.I pcap_filename
+would have their packets split out into a separate pcap.
+T}
+.TE
+
+.SH EXAMPLES
+.TP
+.BI "mptcpsplit " "pcap_filename"
+Read in
+.I pcap_filename
+and output all TCP packets associated without an MPTCP connection association
+to the file
+.BR "outfile.pcap" "."
+.TP
+.BI "mptcpsplit -l " "pcap_filename"
+Read in
+.I pcap_filename
+and output a list of MPTCP connections contained in the file. Connections are
+counted only if the start of the connection (MP_CAPABLE handshake) is contained
+in
+.IR "pcap_filename" "."
+Output lines have five fields in the following order:
+
+.B four_tuple
+.B connection_num 
+.B first_timestamp
+.B last_timestamp
+.B duration
+.TP
+.BI "mptcpsplit -n " "connection_num " " " "pcap_filename"
+Read in
+.I pcap_filename
+and write all packets belonging to connection
+.I connection_num
+to the file
+.BR "outfile.pcap" "."
+To figure out what value to use for
+.IR "connection_num" ","
+the easiest thing to do is run
+.B mptcpsplit
+with the
+.B -l
+option.
+
+.TP
+.BI "mptcpsplit -n " "connection_num " "-o " "outfile pcap_filename"
+Same as previous example, but write packets to the file given by
+.I outfile
+rather than the default filename of
+.BR "outfile.pcap" "."
+
+.SH POSITIONAL ARGUMENTS
+.SS "Required arguments"
+.TP
+.I pcap_filename
+.B mptcpsplit
+will read packets from
+.I pcap_filename
+and perform operations on these packets based on the combination of other
+options specified when
+.B mptcpsplit
+is run. Exactly one pcap file must be passed to mptcpsplit, or else
+the program will exit on an error.
+
+
+.SH OPTIONS
+.SS "General options"
+.TP
+.B -h
+Print out a help dialogue and exit.
+.TP
+.B -l
+Print the connections contained in
+.I pcap_filename
+to stdout. Each connection lists its four-tuple, connection number,
+first packet timestamp, last packet timestamp, and duration.
+Example:
+
+10.155.0.2:58865:10.155.0.1:4401 0 1479480064.900667 1479480133.679078 68.778411
+
+10.155.0.2:58867:10.155.0.1:4401 1 1479480445.142297 1479480526.169200 81.026903
+
+10.155.1.2:46016:10.155.0.1:4401 2 1479480635.459295 1479481353.256593 717.797298
+
+Connections are only listed if the MP_CAPABLE handshake is captured in
+.I pcap_filename
+for that particular connection. The four-tuple listed corresponds to the
+four-tuple of the first subflow for the MPTCP connection.
+.TP
+.BI "-n " "connection_num"
+Write all packets belonging to connection number
+.I connection_num
+to the file
+.BR "outfile.pcap" "."
+
+.TP
+.BI "-o " "outfile"
+.RI "Write packets to " "outfile " "rather than the default file"
+.BR "outfile.pcap" "."
+
+.SH LIMITATIONS
+.B mptcpsplit
+is still under development and may not work under certain conditions due to
+incomplete code. Known limitations include:
+.TP
+.B No IPv6 support
+Currently only IPv4 is supported. IPv6 support is planned for future releases.
+
+.TP
+.B Little-Endian Only
+.B mptcpsplit
+has only been developed and tested on little-endian machines. Certain code
+(like bitfields) may need to be reworked to support big-endian machines.
+
+.SH AUTHORS
+Matt Sargent

@@ -1,0 +1,64 @@
+LICENSE
+-------
+NASA OPEN SOURCE AGREEMENT VERSION 1.3
+
+Government Agency: NASA Glenn Research Center
+Government Agency Original Software Designation: LEW-19620-1
+Government Agency Original Software Title: Multipath TCP (MPTCP) Tools, Analysis, and Configurations
+User Registration Requested. Please Visit https://github.com/nasa/multipath-tcp-tools
+Government Agency Point of Contact for Original Software: Joseph Ishac <jishac@nasa.gov>
+
+Please see LICENSE file for full text.
+
+DESCRIPTION
+-----------
+
+A collection of applications written in C to help both *analyze* and *visualize* MPTCP packet traces.
+
+mptcpsplit - Split out or list individual MPTCP connections from a file.
+
+mptcpcrunch  - Read in trace files containing a single MPTCP connection and output connection information.
+
+mptcpplot - Generate MPTCP connection-level time sequence graphs.
+
+OVERVIEW
+--------
+
+*mptcpsplit* is a tool for learning about MPTCP connections in a given packet packet capture.  The
+program can generate a list of MPTCP connections, extract a single MPTCP connection for detailed
+analysis, or extract all non-MPTCP traffic.
+
+*mptcpcrunch* is a tool for extracting connection-level and subflow-level information for a _single_
+MPTCP connection contained in a given file. The companion program *mptcpsplit* can be used to create
+a file containing only packets belonging to a single MPTCP connection that can then be used as input
+to *mptcpcrunch*.
+
+*mptcpplot* is a tool for reading in a pcap file and creating time sequence graphs for all MPTCP
+connections contained in a given packet capture file. The time sequence graphs display data
+segments and data acknowledgments for an MPTCP connection by color-coding segments belonging to
+particular subflows.
+
+INSTALLATION
+------------
+
+**NOTE WELL**: Please see the section on KNOWN ISSUES AND LIMITATIONS for important build limitations
+
+By default, these tools and the respective (man)nual pages will be installed into /usr/local.
+
+This can be changed by altering the first line of the Makefile.
+
+To build these tools simply run "make"
+
+To install them run "make install"
+
+The programs can be removed with "make uninstall"
+
+KNOWN ISSUES AND LIMITATIONS
+----------------------------
+1. No IPv6 support
+
+  Currently only IPv4 is supported. IPv6 support is planned for future releases.
+
+2. Tested on Little-Endian Only
+
+  This code has only been developed and tested on little-endian machines.  Certain code (like bitfields) may need to be reworked to support big-endian machines.

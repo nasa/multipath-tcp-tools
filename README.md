@@ -9,7 +9,7 @@ The network-traffic-analysis-tools directory contains a collection of applicatio
 ### UPCOMING UPDATES
 ---
 
-* Scripts to configure MPTCP for use over extreamly low-bandwidth, long-latency links (such as Iridium satellite links)
+* Scripts to configure MPTCP for use over extremely low-bandwidth, long-latency links (such as Iridium satellite links)
 
 * Program for spreading UDP packets over multiple PPP links
 

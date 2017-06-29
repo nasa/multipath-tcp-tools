@@ -1,0 +1,122 @@
+.\" mptcpcrunch man page
+.\" 
+.TH man 1 "22 May 2017" "0.1" "mptcpcrunch man page"
+.SH NAME
+mptcpcrunch \- Read in pcap containing a single MPTCP connection and output
+connection information.
+.SH SYNOPSIS
+.BR "mptcpcrunch " "[" "-h" "] [" "-c" "] [" "-s" "] " 
+.I filename
+.SH DESCRIPTION
+.B mptcpcrunch
+is a tool for outputting connection-level and subflow-level information
+for an MPTCP connection contained in
+.IR "filename" "."
+Only packets belonging to a single MPTCP connection should be present in
+.IR "filename" ","
+or else the output of
+.B mptcpcrunch
+will be unknown. The companion program
+.B mptcpsplit
+can be used to create a file containing only packets belonging to a
+single MPTCP connection that can then be used as input to
+.BR "mptcpcrunch" "."
+.SH EXAMPLES
+.TP
+.BI "mptcpcrunch " "filename"
+Read in
+.I filename
+but do not output any connection or subflow information. This may still be
+useful to see if any other errors are thrown then reading in
+.IR "filename" "."
+.TP
+.BI "mptcpcrunch -s " "filename"
+Read in
+.I filename
+and output information about the subflows seen and tracked in the file. See
+.B OUTPUT
+section for more information on what information is included.
+.TP
+.BI "mptcpcrunch -c " "filename"
+Read in
+.I filename
+and output information about the MPTCP connection contained in the file. See
+.B OUTPUT
+section for more information on what information is included.
+
+.SH POSITIONAL ARGUMENTS
+.SS Required arguments
+.TP
+.I "filename"
+.I filename
+is a pcap file containing packets for a single MPTCP connection.
+.B mptcpcrunch
+will read in this file, process its contents, and generate output based
+on the other options present at runtime. A pcap containing a single MPTCP
+connection can be created with the program
+.BR "mptcpsplit" ". Exactly one filename must be given, or else"
+.R the program will exit on an error.
+
+.SH OPTIONS
+.SS General options
+.TP
+.B -h
+Print out a help dialog and exit.
+.TP
+.B -s
+Process the packets in
+.I filename
+and write subflow-level information to stdout. Format for the output
+can be found in the
+.B OUTPUT
+section.
+.TP
+.B -c
+Process the packets in
+.I filename
+and write connection-level information to stdout. Format for the output
+can be found in the
+.B OUTPUT
+section.
+
+.SH OUTPUT
+There are currently two modes of output that can be generated,
+.B connection-level
+information and
+.B subflow-level
+information.
+
+.TP
+.B Connection-level information format
+Connection-level information includes three lines of output. The first
+line contains some meta information about the connection. The second
+and third lines contain information about each connection direction.
+Data in all three lines is labeled when output with the format
+"LABEL: DATA".
+
+.TP
+.B Subflow-level information format
+For each subflow in a connection, output three lines of output. The
+first line contains the subflow number. The second and third lines
+contain statistics on each direction for the subflow. Like
+connection-level information, all data is labeled when output.
+
+.SH LIMITATIONS
+.B mptcpcrunch
+is still under development and may not work under certain conditions due to
+incomplete code. Known limitations include:
+.TP
+.B No IPv6 support
+Currently only IPv4 is supported. IPv6 support is planned for future releases.
+
+.TP
+.B Little-Endian Only
+.B mptcpcrunch
+has only been developed and tested on little-endian machines. Certain code
+(like bitfields) may need to be reworked to support big-endian machines.
+
+.SH SEE ALSO
+.BR mptcpsplit (1)
+
+.SH AUTHOR
+Matt Sargent

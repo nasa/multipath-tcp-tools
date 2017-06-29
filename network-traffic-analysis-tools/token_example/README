@@ -1,0 +1,60 @@
+The -t flag for mptcpplot can be confusing, so this is meant to be a
+more detailed example.
+
+First, run mptcpplot with the -t option and pull aside the three
+files associated with a single connection (the ORIGIN and REMOTE xplot
+files as well as the MAPPING txt file).
+
+Look in the MAPPING file. You should see some sort of output like
+this:
+
+10.155.0.1:3128:10.155.1.2:41292 TOKEN005
+10.155.0.1:3128:10.155.1.2:41564 TOKEN002
+10.155.0.1:3128:10.155.2.2:45096 TOKEN003
+10.155.0.1:3128:10.155.3.2:34161 TOKEN006
+10.155.0.1:3128:10.155.3.2:48384 TOKEN004
+10.155.0.2:38712:10.155.0.1:3128 TOKEN001
+
+
+Each line is a mapping from a 4-tuple string to a token. If you look
+in the xplot files you pulled over for this connection, you will
+notice that the TOKENxyz values are used where you would normally
+expect to see colors.  For example:
+
+box 1479482871.491773 2982815102 TOKEN002
+
+We can see from TOKEN002 that this subflow's 4-tuple is actually
+10.155.0.1:3128:10.155.1.2:41564.
+
+As a user, you are free to replace the TOKEN values as you see fit.
+You may just search and replace by hand, or perhaps you use tools like
+sed to do the heavy lifting for you. Just make sure that all tokens in
+the xplot files are replaced with colors before the files are opened
+with xplot. Otherwise, you may cause xplot to throw an error.
+
+An example python script is included to show one possible way to
+automate coloring rules when we know pairs of addresses between
+two hosts will communicate often.
+
+The color_changer.py script expects a set of files from mptcpplot -t
+as well as a file containing a master set of coloring rules (see
+master.txt). Coloring rules in this example are two columns. The first
+column is a regular expression and the second column is a color.
+First, color_changer reads in and stores rules from the master rule
+file. Then, the correct MAPPING file is read in and tokens matching a
+particular rule are assigned the correct color found in the master
+rule file. Finally, any xplot files passed to color_changer.py as
+arguments will have their TOKEN values updated with the proper colors.
+
+Example:
+
+python color_changer.py master.txt connection_0-MAPPING.txt connection_0-ORIGIN.xpl connection_0-REMOTE.xpl
+python color_changer.py master.txt connection_1-MAPPING.txt connection_1-ORIGIN.xpl connection_1-REMOTE.xpl
+python color_changer.py master.txt connection_2-MAPPING.txt connection_2-ORIGIN.xpl connection_2-REMOTE.xpl
+
+Running these three commands in a row would use the same set of
+coloring rules in master.txt to update the TOKEN values for
+connections 0, 1, and 2.
+
+If we change the master file to the rule found in master2.txt, we would
+create a plot where every subflow is colored with red.
