@@ -131,7 +131,8 @@ void ipv4_mp_capable_information(struct connection_data_struct * conn_data, int 
 		      conn_data->mptcp_connections.size()-1,
 		      get_tflag(),
 		      get_flag2(),
-		      get_rflag());
+		      get_rxflag(),
+		      get_ryflag());
 	if (version == MP_PROTOCOL_VER_0){
 	  uint64_t key = get_ipv4_mp_capable_src_key(pkt_data,
 						     *link_layer_offset);

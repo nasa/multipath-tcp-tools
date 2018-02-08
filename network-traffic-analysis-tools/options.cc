@@ -33,7 +33,8 @@ static int g_tflag(TFLAG_INIT);
 static int g_fflag(FFLAG_INIT);
 static int g_flag2(FLAG2_INIT);
 static int g_hflag(HFLAG_INIT);
-static int g_rflag(RFLAG_INIT);
+static int g_rxflag(RFLAG_INIT);
+static int g_ryflag(RFLAG_INIT);
 static int g_aflag(AFLAG_INIT);
 static int g_jflag(JFLAG_INIT);
 static bool g_initialized(false);
@@ -64,10 +65,12 @@ char * handle_options(int argc, char *argv[]){
     "-b:  Output basic connection information.\n\n"
     "-j:  Turn on JOIN ticks.\n\n"
     "-l:  Output long connection information.\n\n"
-    "-r:  Output relative sequence numbers.\n\n"
+    "-r:  [Deprecated: Use -y] Output relative sequence numbers.\n\n"
+    "-x:  Output relative time.\n\n"
+    "-y:  Output relative sequence numbers.\n\n"
     "-t:  Output TOKEN values rather than colors.\n\n";    
 
-  while ((c = getopt(argc, argv, "t2hrajbl")) != -1){
+  while ((c = getopt(argc, argv, "t2hrajblxy")) != -1){
     switch(c){
     case 't':
       g_tflag = 1;
@@ -76,7 +79,11 @@ char * handle_options(int argc, char *argv[]){
       g_flag2 = 1;
       break;
     case 'r':
-      g_rflag = 1;
+    case 'y':
+      g_ryflag = 1;
+      break;
+    case 'x':
+      g_rxflag = 1;
       break;
     case 'h':
       g_hflag = 1;
@@ -297,9 +304,16 @@ int get_hflag(){
   return HFLAG_INIT;
 }
 
-int get_rflag(){
+int get_rxflag(){
   if (check_if_init()){
-    return g_rflag;
+    return g_rxflag;
+  }
+  return RFLAG_INIT;
+}
+
+int get_ryflag(){
+  if (check_if_init()){
+    return g_ryflag;
   }
   return RFLAG_INIT;
 }

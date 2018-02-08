@@ -5,7 +5,7 @@
 
 using namespace std;
 
-Plotter::Plotter(const char filename[], FourTuple ft, int connection_num, int token_flag, int address_pair_flag, int relative_flag){
+Plotter::Plotter(const char filename[], FourTuple ft, int connection_num, int token_flag, int address_pair_flag, int relative_x_flag, int relative_y_flag){
   string origin_file = filename;
   string remote_file = filename;
   output_filename = filename;
@@ -13,6 +13,7 @@ Plotter::Plotter(const char filename[], FourTuple ft, int connection_num, int to
   should_tokenize = false;
   address_pair_colors = false;
   relative_sequence = false;
+  relative_time = false;
   
   if (token_flag){
     should_tokenize = true;
@@ -20,8 +21,11 @@ Plotter::Plotter(const char filename[], FourTuple ft, int connection_num, int to
   if (address_pair_flag){
     address_pair_colors = true;
   }
-  if (relative_flag){
-    relative_sequence = true ;
+  if (relative_y_flag){
+    relative_sequence = true;
+  }
+  if (relative_x_flag){
+    relative_time = true;
   }
   origin_file += "-ORIGIN.xpl";
   remote_file += "-REMOTE.xpl";
@@ -39,21 +43,28 @@ Plotter::Plotter(const char filename[], FourTuple ft, int connection_num, int to
   remote_ack_timestamp = 0;
 
   // output headers for xpl files
-  origin_plot << "timeval double\ntitle\nConnection " << connection_num << " ";
-  origin_plot << ft.get_src_string() << endl;
-  origin_plot << "xlabel\nTimestamp\nylabel\n";
+  if (relative_time) {
+    origin_plot << "dtime double\ntitle\nConnection " << connection_num << " ";
+    origin_plot << ft.get_src_string() << endl;
+    remote_plot << "dtime double\ntitle\nConnection " << connection_num << " ";
+    remote_plot << ft.get_dst_string() << endl;
+    origin_plot << "xlabel\nrelative time (sec)\n";
+    remote_plot << "xlabel\nrelative time (sec)\n";
+  } else {
+    origin_plot << "timeval double\ntitle\nConnection " << connection_num << " ";
+    origin_plot << ft.get_src_string() << endl;
+    remote_plot << "timeval double\ntitle\nConnection " << connection_num << " ";
+    remote_plot << ft.get_dst_string() << endl;
+    origin_plot << "xlabel\ntime (hh:mm:ss)\n";
+    remote_plot << "xlabel\ntime (hh:mm:ss)\n";
+  }
   if (relative_sequence){
-    origin_plot << "Rel. ";
+    origin_plot << "ylabel\nMPTCP sequence offset\n";
+    remote_plot << "ylabel\nMPTCP sequence offset\n";
+  } else {
+    origin_plot << "ylabel\nMPTCP sequence number\n";
+    remote_plot << "ylabel\nMPTCP sequence number\n";
   }
-  origin_plot << "MPTCP Seq. Num.\n";
-
-  remote_plot << "timeval double\ntitle\nConnection " << connection_num << " ";
-  remote_plot << ft.get_dst_string() << endl;
-  remote_plot << "xlabel\nTimestamp\nylabel\n";
-  if(relative_sequence){
-    remote_plot << "Rel. ";
-  }
-  remote_plot << "MPTCP Seq. Num.\n";
 }
 
 // minor cleanup.
@@ -88,6 +99,11 @@ void Plotter::plot_ack(DSS dss, FourTuple ft, double timestamp, int direction, M
   uint64_t output_ack;
   uint64_t topmost_bits;
   uint64_t initial_offset;
+  uint64_t initial_toffset = 0;
+  
+  if (relative_time) {
+    initial_toffset = mptcp_conn->get_initial_timestamp();
+  }
   
   // figure out the correct plot to write data to based on direction
   if (direction == PKT_SRC_SENT){
@@ -116,9 +132,9 @@ void Plotter::plot_ack(DSS dss, FourTuple ft, double timestamp, int direction, M
   (*output_plot) << fixed;
   (*output_plot) << setprecision(6);
   if (dss.is_data_fin()){
-    (*output_plot) << "diamond " << timestamp << " ";
+    (*output_plot) << "diamond " << (timestamp - initial_toffset) << " ";
   } else {
-    (*output_plot) << "box " << timestamp << " ";
+    (*output_plot) << "box " << (timestamp - initial_toffset) << " ";
   }
   (*output_plot) << output_ack << " " << get_color(ft) << endl;
     
@@ -138,6 +154,12 @@ void Plotter::plot_ack_line(DSS dss, FourTuple ft, double timestamp, int directi
   uint64_t output_ack_higher;
 
   uint64_t initial_sequence_offset;
+  uint64_t initial_toffset = 0;
+  
+  if (relative_time) {
+    initial_toffset = mptcp_conn->get_initial_timestamp();
+  }
+
   // figure out which plot to use. figure out which stored variables to use.
   // Here, 'origin' means connection starter. 'remote' means the passive opener
   if (direction == PKT_DST_SENT){
@@ -195,12 +217,12 @@ void Plotter::plot_ack_line(DSS dss, FourTuple ft, double timestamp, int directi
       output_ack_higher = (ack_num & 0xFFFFFFFF);
     }
     // always advance ack line to the right
-    (*output_plot) << "line " << (*ack_timestamp_base) << " " << output_ack_lower;
-    (*output_plot) << " " << timestamp << " " << output_ack_lower << " green\n";
+    (*output_plot) << "line " << (*ack_timestamp_base) - initial_toffset << " " << output_ack_lower;
+    (*output_plot) << " " << (timestamp - initial_toffset) << " " << output_ack_lower << " green\n";
     // advance ack line vertically when new max ack seen
     if (ack_num > (*max_ack_base)){
-      (*output_plot) << "line " << timestamp << " " << output_ack_lower;
-      (*output_plot) << " " << timestamp << " " << output_ack_higher << " green\n";
+      (*output_plot) << "line " << (timestamp - initial_toffset) << " " << output_ack_lower;
+      (*output_plot) << " " << (timestamp - initial_toffset) << " " << output_ack_higher << " green\n";
     }
     (*max_ack_base) = ack_num;
     (*ack_timestamp_base) = timestamp;
@@ -212,6 +234,11 @@ void Plotter::plot_dsn(DSS dss, FourTuple ft, double timestamp, int direction, M
   uint64_t base_dsn;
   uint64_t topmost_bits;
   uint64_t initial_offset;
+  uint64_t initial_toffset = 0;
+  
+  if (relative_time) {
+    initial_toffset = mptcp_conn->get_initial_timestamp();
+  }
   
   // figure out which plot to write to
   if (direction == PKT_SRC_SENT){
@@ -244,13 +271,13 @@ void Plotter::plot_dsn(DSS dss, FourTuple ft, double timestamp, int direction, M
   // draw a vertical line with up and down arrows on each end.
   (*output_plot) << fixed;
   (*output_plot) << setprecision(6);
-  (*output_plot) << "line " << timestamp << " ";
-  (*output_plot) << base_dsn << " " << timestamp << " ";
+  (*output_plot) << "line " << (timestamp - initial_toffset) << " ";
+  (*output_plot) << base_dsn << " " << (timestamp - initial_toffset) << " ";
   (*output_plot) << (base_dsn + dss.get_payload_length()) << " ";
   (*output_plot) << get_color(ft) << endl;
-  (*output_plot) << "darrow " << timestamp << " " << base_dsn;
+  (*output_plot) << "darrow " << (timestamp - initial_toffset) << " " << base_dsn;
   (*output_plot) << " " << get_color(ft) << endl;
-  (*output_plot) << "uarrow " << timestamp << " ";
+  (*output_plot) << "uarrow " << (timestamp - initial_toffset) << " ";
   (*output_plot) << (base_dsn + dss.get_payload_length()) << " ";
   (*output_plot) << get_color(ft) << endl;
 }
@@ -261,6 +288,11 @@ void Plotter::plot_data_fin(DSS dss, FourTuple ft, double timestamp, int directi
   ofstream * output_plot;
   uint64_t output_ack;
   uint64_t initial_offset;
+  uint64_t initial_toffset = 0;
+  
+  if (relative_time) {
+    initial_toffset = mptcp_conn->get_initial_timestamp();
+  }
   
   if (direction == PKT_SRC_SENT){
     output_plot = &remote_plot;
@@ -282,11 +314,11 @@ void Plotter::plot_data_fin(DSS dss, FourTuple ft, double timestamp, int directi
   }
   
   (*output_plot) << fixed << setprecision(6);
-  (*output_plot) << "diamond " << timestamp << " ";
+  (*output_plot) << "diamond " << (timestamp - initial_toffset) << " ";
   (*output_plot) << output_ack << " " << get_color(ft) << endl;
   
   (*output_plot) << get_color(ft) << endl;
-  (*output_plot) << "atext " << timestamp << " " << output_ack << endl;
+  (*output_plot) << "atext " << (timestamp - initial_toffset) << " " << output_ack << endl;
   (*output_plot) << "DATA_FIN" << endl;
   
 }
@@ -370,6 +402,11 @@ void Plotter::create_mapping(){
 void Plotter::plot_syn(MPTCPConnection * mptcp_conn, double timestamp, int direction, FourTuple ft){
   ofstream * output_plot;
   uint64_t initial_sequence;
+  uint64_t initial_toffset = 0;
+  
+  if (relative_time) {
+    initial_toffset = mptcp_conn->get_initial_timestamp();
+  }
   
   add_color(ft);
 
@@ -390,15 +427,15 @@ void Plotter::plot_syn(MPTCPConnection * mptcp_conn, double timestamp, int direc
   
   (*output_plot) << fixed;
   (*output_plot) << setprecision(6);
-  (*output_plot) << "uarrow " << timestamp << " " ;
+  (*output_plot) << "uarrow " << (timestamp - initial_toffset) << " " ;
   (*output_plot) << initial_sequence << " ";
   (*output_plot) << get_color(ft) << endl;
-  (*output_plot) << "darrow " << timestamp << " " ;
+  (*output_plot) << "darrow " << (timestamp - initial_toffset) << " " ;
   (*output_plot) << initial_sequence << " ";
   (*output_plot) << get_color(ft) << endl;
   
   (*output_plot) << get_color(ft) << endl;
-  (*output_plot) << "atext " << timestamp << " " ;
+  (*output_plot) << "atext " << (timestamp - initial_toffset) << " " ;
   (*output_plot) << initial_sequence << endl;
   (*output_plot) << "SYN " << endl;
 }
@@ -406,6 +443,11 @@ void Plotter::plot_syn(MPTCPConnection * mptcp_conn, double timestamp, int direc
 void Plotter::plot_tick(int direction, FourTuple ft, MPTCPConnection * mptcp_conn, double timestamp, const char text[]){
   ofstream * output_plot;
   uint64_t sequence;
+  uint64_t initial_toffset = 0;
+  
+  if (relative_time) {
+    initial_toffset = mptcp_conn->get_initial_timestamp();
+  }
 
   // figure out which plot to use and the correct initial seq num for the plot
   if (direction == PKT_SRC_SENT){
@@ -432,10 +474,10 @@ void Plotter::plot_tick(int direction, FourTuple ft, MPTCPConnection * mptcp_con
   (*output_plot) << setprecision(6);
 
   (*output_plot) << get_color(ft) << endl;
-  (*output_plot) << "dtick " << timestamp << " " ;
+  (*output_plot) << "dtick " << (timestamp - initial_toffset) << " " ;
   (*output_plot) << sequence - LOWER_OFFSET << " ";
   (*output_plot) << get_color(ft) << endl;
-  (*output_plot) << "atext " << timestamp << " " ;
+  (*output_plot) << "atext " << (timestamp - initial_toffset) << " " ;
   (*output_plot) << sequence - LOWER_OFFSET << endl;
   (*output_plot) << text << endl;  
 }

@@ -34,7 +34,7 @@ class Plotter{
  public:
   // open output files. track whether we color address pairs or 4-tuples.
   // track whether we color with tokens or colors
-  Plotter(const char filename[], FourTuple ft, int connection_num, int token_flag, int address_pair_flag, int relative_flag);
+  Plotter(const char filename[], FourTuple ft, int connection_num, int token_flag, int address_pair_flag, int relative_x_flag, int relative_y_flag);
 
   // Close output files
   ~Plotter();
@@ -92,6 +92,7 @@ class Plotter{
 
   bool relative_sequence;      // If true, output relative sequence numbers.
                                // Otherwise, output lower 32-bits.
+  bool relative_time;          // If true, output relative time offsets
   bool should_tokenize;        // If true, use tokens rather than colors.
   bool address_pair_colors;    // if true, color IP address pairs rather than
                                // four tuples.
