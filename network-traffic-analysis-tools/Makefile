@@ -2,7 +2,7 @@ PREFIX=/usr/local
 
 CXX = g++
 CXXFLAGS = -g -Wall -Wpedantic
-CPPFLAGS = -D__FAVOR_BSD
+CPPFLAGS = 
 LDLIBS = -lpcap -lcrypto -lssl
 
 mptcpplot_objects = mptcpparser.o layer_handlers.o address.o four_tuple.o connection_map.o parser_utility.o mptcp_connection.o plotter.o dss.o processing.o options.o mapping.o

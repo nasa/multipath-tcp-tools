@@ -192,7 +192,7 @@ bool contains_ipv4_mptcp(const u_char* packet, const int ip_offset){
   if (ip_header->ip_p == IPPROTO_TCP){
     ip_header_length = (ip_header->ip_hl * 4);
     tcp_header = (struct tcphdr*)(packet + ip_offset + ip_header_length); 
-    tcp_header_length = ((tcp_header->th_off & 0xf0 >> 4) * 4);
+    tcp_header_length = ((tcp_header->doff & 0xf0 >> 4) * 4);
   } else {
     return false;
   }
@@ -215,7 +215,7 @@ bool contains_ipv4_mptcp_option(const u_char* packet, const int ip_offset, const
   if (ip_header->ip_p == IPPROTO_TCP){
     ip_header_length = (ip_header->ip_hl * 4);
     tcp_header = (struct tcphdr*)(packet + ip_offset + ip_header_length); 
-    tcp_header_length = ((tcp_header->th_off & 0xf0 >> 4) * 4);
+    tcp_header_length = ((tcp_header->doff & 0xf0 >> 4) * 4);
   } else {
     return false;
   }
@@ -238,7 +238,7 @@ uint8_t get_ipv4_mp_capable_version(const u_char* packet, const int ip_offset){
   if (ip_header->ip_p == IPPROTO_TCP){
     ip_header_length = (ip_header->ip_hl * 4);
     tcp_header = (struct tcphdr*)(packet + ip_offset + ip_header_length); 
-    tcp_header_length = ((tcp_header->th_off & 0xf0 >> 4) * 4);
+    tcp_header_length = ((tcp_header->doff & 0xf0 >> 4) * 4);
   } else {
     return MP_PROTOCOL_NO_VER;
   }
@@ -283,7 +283,7 @@ uint64_t get_ipv4_mp_capable_src_key(const u_char* packet, const int ip_offset){
   if (ip_header->ip_p == IPPROTO_TCP){
     ip_header_length = (ip_header->ip_hl * 4);
     tcp_header = (struct tcphdr*)(packet + ip_offset + ip_header_length); 
-    tcp_header_length = ((tcp_header->th_off & 0xf0 >> 4) * 4);
+    tcp_header_length = ((tcp_header->doff & 0xf0 >> 4) * 4);
   } else {
     return MPTCP_NO_KEY;
   }
@@ -327,7 +327,7 @@ uint64_t get_ipv4_mp_capable_dst_key(const u_char* packet, const int ip_offset){
   if (ip_header->ip_p == IPPROTO_TCP){
     ip_header_length = (ip_header->ip_hl * 4);
     tcp_header = (struct tcphdr*)(packet + ip_offset + ip_header_length); 
-    tcp_header_length = ((tcp_header->th_off & 0xf0 >> 4) * 4);
+    tcp_header_length = ((tcp_header->doff & 0xf0 >> 4) * 4);
   } else {
     return MPTCP_NO_KEY;
   }
@@ -373,7 +373,7 @@ uint32_t get_ipv4_mp_join_token(const u_char* packet, const int ip_offset){
   if (ip_header->ip_p == IPPROTO_TCP){
     ip_header_length = (ip_header->ip_hl * 4);
     tcp_header = (struct tcphdr*)(packet + ip_offset + ip_header_length); 
-    tcp_header_length = ((tcp_header->th_off & 0xf0 >> 4) * 4);
+    tcp_header_length = ((tcp_header->doff & 0xf0 >> 4) * 4);
   } else {
     return MPTCP_NO_KEY;
   }
@@ -418,7 +418,7 @@ DSS handle_ipv4_dss(const u_char * packet, const unsigned int ip_offset){
   if (ip_header->ip_p == IPPROTO_TCP){
     ip_header_length = (ip_header->ip_hl * 4);
     tcp_header = (struct tcphdr*)(packet + ip_offset + ip_header_length); 
-    tcp_header_length = ((tcp_header->th_off & 0xf0 >> 4) * 4);
+    tcp_header_length = ((tcp_header->doff & 0xf0 >> 4) * 4);
     
     const unsigned int first_option_offset = ip_offset + ip_header_length + sizeof(struct tcphdr);
     const struct tcp_opt *tcp_option_header;
