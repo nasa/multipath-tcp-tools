@@ -1,4 +1,4 @@
-PREFIX=/usr/local
+PREFIX ?=/usr/local
 
 CXX = g++
 CXXFLAGS = -g -Wall -Wpedantic
