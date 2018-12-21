@@ -1,0 +1,48 @@
+diff --git a/net/mptcp/mptcp_fullmesh.c b/net/mptcp/mptcp_fullmesh.c
+index fd7974f..085255f 100644
+--- a/net/mptcp/mptcp_fullmesh.c
++++ b/net/mptcp/mptcp_fullmesh.c
+@@ -94,10 +94,13 @@ struct mptcp_fm_ns {
+ 
+ static int num_subflows __read_mostly = 1;
+ static int dont_remove __read_mostly = 1;
++static int ignore_iface __read_mostly = 1;
+ module_param(num_subflows, int, 0644);
+ module_param(dont_remove, int, 0644);
++module_param(ignore_iface, int, 0644);
+ MODULE_PARM_DESC(num_subflows, "choose the number of subflows per pair of IP addresses of MPTCP connection");
+ MODULE_PARM_DESC(dont_remove, "if set, never issue REMOVE_ADDR messages.  Useful if all interfaces share a common address");
++MODULE_PARM_DESC(ignore_iface, "if set, only unique IP address will create additional subflows.  Otherwise, use both address and interface (a new interface with a previously used address will generate a new subflow");
+ 
+ static int create_on_err __read_mostly;
+ module_param(create_on_err, int, 0644);
+@@ -1081,7 +1084,7 @@ static void addr4_event_handler(const struct in_ifaddr *ifa, unsigned long event
+ 	mpevent.family = AF_INET;
+ 	mpevent.addr.in.s_addr = ifa->ifa_local;
+ 	mpevent.low_prio = (netdev->flags & IFF_MPBACKUP) ? 1 : 0;
+-	mpevent.if_idx  = netdev->ifindex;
++	mpevent.if_idx  = (ignore_iface) ? 0 : netdev->ifindex;
+ 
+ 	if (event == NETDEV_DOWN || !netif_running(netdev) ||
+ 	    (netdev->flags & IFF_NOMULTIPATH) || !(netdev->flags & IFF_UP)) {
+@@ -1208,7 +1211,7 @@ static void addr6_event_handler(const struct inet6_ifaddr *ifa, unsigned long ev
+ 	mpevent.family = AF_INET6;
+ 	mpevent.addr.in6 = ifa->addr;
+ 	mpevent.low_prio = (netdev->flags & IFF_MPBACKUP) ? 1 : 0;
+-	mpevent.if_idx = netdev->ifindex;
++	mpevent.if_idx = (ignore_iface) ? 0 : netdev->ifindex;
+ 
+ 	if (event == NETDEV_DOWN || !netif_running(netdev) ||
+ 	    (netdev->flags & IFF_NOMULTIPATH) || !(netdev->flags & IFF_UP)) {
+@@ -1332,7 +1335,10 @@ static void full_mesh_new_session(const struct sock *meta_sk)
+ #endif
+ 	}
+ 
+-	if (inet_sk(meta_sk)->transparent)
++	/* unset if_idx if ignore is set */
++  if (ignore_iface)
++    if_idx = 0;
++  else if (inet_sk(meta_sk)->transparent)
+ 		if_idx = inet_sk(meta_sk)->rx_dst_ifindex;
+ 
+ 	rcu_read_lock_bh();

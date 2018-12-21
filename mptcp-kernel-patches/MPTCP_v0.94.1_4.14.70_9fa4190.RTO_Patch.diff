@@ -1,0 +1,15 @@
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index 6e13abe..91c8715 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -140,8 +140,8 @@ void tcp_time_wait(struct sock *sk, int state, int timeo);
+ #define TCP_RTO_MAX	((unsigned)(120*HZ))
+ #define TCP_RTO_MIN	((unsigned)(HZ/5))
+ #define TCP_TIMEOUT_MIN	(2U) /* Min timeout for TCP timers in jiffies */
+-#define TCP_TIMEOUT_INIT ((unsigned)(1*HZ))	/* RFC6298 2.1 initial RTO value	*/
+-#define TCP_TIMEOUT_FALLBACK ((unsigned)(3*HZ))	/* RFC 1122 initial RTO value, now
++#define TCP_TIMEOUT_INIT ((unsigned)(5*HZ))	/* RFC6298 2.1 initial RTO value, modified to 5 seconds.*/
++#define TCP_TIMEOUT_FALLBACK ((unsigned)(5*HZ))	/* RFC 1122 initial RTO value, modified to 5 seconds. Now
+ 						 * used as a fallback RTO for the
+ 						 * initial data transmission if no
+ 						 * valid RTT sample has been acquired,

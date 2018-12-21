@@ -1,0 +1,73 @@
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index beb5684..c4b35ae7 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -130,8 +130,8 @@ void tcp_time_wait(struct sock *sk, int state, int timeo);
+ #endif
+ #define TCP_RTO_MAX	((unsigned)(120*HZ))
+ #define TCP_RTO_MIN	((unsigned)(HZ/5))
+-#define TCP_TIMEOUT_INIT ((unsigned)(1*HZ))	/* RFC6298 2.1 initial RTO value	*/
+-#define TCP_TIMEOUT_FALLBACK ((unsigned)(3*HZ))	/* RFC 1122 initial RTO value, now
++#define TCP_TIMEOUT_INIT ((unsigned)(5*HZ))	/* RFC6298 2.1 initial RTO value	*/
++#define TCP_TIMEOUT_FALLBACK ((unsigned)(5*HZ))	/* RFC 1122 initial RTO value, now
+ 						 * used as a fallback RTO for the
+ 						 * initial data transmission if no
+ 						 * valid RTT sample has been acquired,
+diff --git a/net/mptcp/mptcp_fullmesh.c b/net/mptcp/mptcp_fullmesh.c
+index df9210d..a2727ab 100644
+--- a/net/mptcp/mptcp_fullmesh.c
++++ b/net/mptcp/mptcp_fullmesh.c
+@@ -90,7 +90,9 @@ struct mptcp_fm_ns {
+ };
+ 
+ static int num_subflows __read_mostly = 1;
++static int dont_remove __read_mostly = 1;
+ module_param(num_subflows, int, 0644);
++module_param(dont_remove, int, 0644);
+ MODULE_PARM_DESC(num_subflows, "choose the number of subflows per pair of IP addresses of MPTCP connection");
+ 
+ static struct mptcp_pm_ops full_mesh __read_mostly;
+@@ -1015,9 +1017,11 @@ static void addr4_event_handler(const struct in_ifaddr *ifa, unsigned long event
+ 	mpevent.low_prio = (netdev->flags & IFF_MPBACKUP) ? 1 : 0;
+ 
+ 	if (event == NETDEV_DOWN || !netif_running(netdev) ||
+-	    (netdev->flags & IFF_NOMULTIPATH) || !(netdev->flags & IFF_UP))
++	    (netdev->flags & IFF_NOMULTIPATH) || !(netdev->flags & IFF_UP)) {
++		if(dont_remove && !(netdev->flags & IFF_NOMULTIPATH))
++			goto exit;
+ 		mpevent.code = MPTCP_EVENT_DEL;
+-	else if (event == NETDEV_UP)
++	} else if (event == NETDEV_UP)
+ 		mpevent.code = MPTCP_EVENT_ADD;
+ 	else if (event == NETDEV_CHANGE)
+ 		mpevent.code = MPTCP_EVENT_MOD;
+@@ -1026,6 +1030,7 @@ static void addr4_event_handler(const struct in_ifaddr *ifa, unsigned long event
+ 		    &ifa->ifa_local, mpevent.code, mpevent.low_prio);
+ 	add_pm_event(net, &mpevent);
+ 
++exit:
+ 	spin_unlock_bh(&fm_ns->local_lock);
+ 	return;
+ }
+@@ -1138,9 +1143,11 @@ static void addr6_event_handler(const struct inet6_ifaddr *ifa, unsigned long ev
+ 	mpevent.low_prio = (netdev->flags & IFF_MPBACKUP) ? 1 : 0;
+ 
+ 	if (event == NETDEV_DOWN || !netif_running(netdev) ||
+-	    (netdev->flags & IFF_NOMULTIPATH) || !(netdev->flags & IFF_UP))
++	    (netdev->flags & IFF_NOMULTIPATH) || !(netdev->flags & IFF_UP)) {
++		if(dont_remove && !(netdev->flags & IFF_NOMULTIPATH))
++			goto exit;
+ 		mpevent.code = MPTCP_EVENT_DEL;
+-	else if (event == NETDEV_UP)
++	} else if (event == NETDEV_UP)
+ 		mpevent.code = MPTCP_EVENT_ADD;
+ 	else if (event == NETDEV_CHANGE)
+ 		mpevent.code = MPTCP_EVENT_MOD;
+@@ -1149,6 +1156,7 @@ static void addr6_event_handler(const struct inet6_ifaddr *ifa, unsigned long ev
+ 		    &ifa->addr, mpevent.code, mpevent.low_prio);
+ 	add_pm_event(net, &mpevent);
+ 
++exit:
+ 	spin_unlock_bh(&fm_ns->local_lock);
+ 	return;
+ }
