@@ -28,6 +28,7 @@ leverage traffic priority classes or other more advanced features.
 
 USAGE
 -----
+```
 usage: udp_proxy.py [-h] [-V] [-D] [-v] [-q] [-f] [-b] [-d] [-P FILE]
                     [-p PREFIX] [-n NUM] [-i [INDEX [INDEX ...]]] [-s SIZE]
                     [-r RATE] [-T TUN] [-t FILE] [-w SEC]
@@ -64,34 +65,49 @@ optional arguments:
                         packets in FILE.
   -w SEC, --wait SEC    Connections which are idle after timeout SEC are
                         terminated. Useful for piping from files.
+```
 
 EXAMPLES
 --------
 
+```
 sudo python udp_proxy.py -T tun0
+```
 
 Will attempt to forward packets from tun0 to 4 PPP devices: ppp0, ppp1, ppp2, ppp3
 
+```
 sudo python udp_proxy.py -D -vv -T tun0 >> /var/log/udp_proxy.log 2>&1
+```
 
 Same as the first example, but also log activity to a log file.
 
+```
 sudo python udp_proxy.py -T tun0 -n 8
+```
 
 Will produce an error, not enough interfaces specified.  To remedy either specify:
 
+```
 sudo python udp_proxy.py -T tun0 -n 8 -i 0 1 2 3 4 5 6 7
+```
 
 or use the force option:
 
+```
 sudo python udp_proxy.py -T tun0 -n 8 -f; # Extrapolates the initial [0,1,2,3] to [0,1,2,3,4,5,6,7]
+```
 
 The force option can also be used to quickly re-index the device list from 0
 
+```
 sudo python udp_proxy.py -T tun0 -n 4 -i 4 -f; # Uses ppp4, ppp5, ppp6, ppp7
+```
 
 The -f option is also required if the initial index is not fully used (truncation).
 
+```
 sudo python udp_proxy.py -T tun0 -n 2
+```
 
 Will also produce an error.  Thus, if you intend to modify the number of interfaces, either use the -f option or specify the indexes using -i
