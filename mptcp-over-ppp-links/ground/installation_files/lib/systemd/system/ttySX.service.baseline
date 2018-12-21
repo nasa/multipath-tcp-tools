@@ -1,0 +1,13 @@
+# ttySX - mgetty
+# This service maintains mgetty on /dev/ttySX
+
+[Unit]
+Description=Service maintains mgetty on /dev/ttySX
+Documentation=man:mgetty(8)
+
+[Service]
+Restart=on-failure
+ExecStart=/sbin/mgetty -n 2 ttySX
+
+[Install]
+Alias=ttySX

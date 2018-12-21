@@ -1,0 +1,7 @@
+#port ttySX
+#  init-chat "" ATM0 OK ATA
+port ttySX
+  init-chat "" ATM0 OK ATS0=1
+  debug 4
+  data-only y
+

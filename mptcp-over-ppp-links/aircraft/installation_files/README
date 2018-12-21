@@ -1,0 +1,125 @@
+# Copyright (c) 2018
+# United States Government as represented by Joseph Ishac <jishac@nasa.gov>
+# No copyright is claimed in the United States under Title 17, U.S.Code. All Other Rights Reserved.
+
+# WARNING!!!!!!!  "Alpha" code
+# These scripts modify system files and utilizes experimental code.
+# It is not capable of backing out all changes an can leave your system in a
+# state which requires manual cleanup.  A reasonable effort is made to backup
+# files, but please be cautious.  This script also installs a new kernel and
+# modifies the boot loader.
+
+SUMMARY
+=======
+
+A collection of scripts to automate the install and configuration of a MPTCP
+host.  There are a set of scripts for a "ground station" install and an
+"aircraft" install.  The aircraft is intended to dial into a respective ground
+station over multiple satellite modems.  
+
+The scripts expect and were tested using an Ubuntu system, but may be compatible
+with other similar operating systems.
+
+Simply unpack and run
+
+./system_prep.sh
+
+This will prep the system, install the needed kernels and packages.
+
+The installation files will be copied to /home/nasa/baseline
+
+After install a restart is required to boot into the new kernel.  Issue:
+
+sudo restart
+
+Next run:
+
+sudo /home/nasa/baseline/reconfigure.sh
+
+The script will prompt for the needed information or you may specify your
+options in the supporting configuration files.
+
+After reconfiguration a restart is recommended (especially on the first
+configuration) to ensure all services are started.  Issue:
+
+sudo restart
+
+After the system reboots the modems are by default **OFF** until turned on.
+Simply run:
+
+sudo ./start_ppp.sh
+
+To bring the modems up and 
+
+sudo ./stop_ppp.sh
+
+To bring the modems down.
+
+The reconfigure.sh script can be re-run to adjust which interfaces are used or the number of interfaces used.
+
+ADVANCED OPTIONS
+================
+
+The mptcp.host.config file can be used to automate reconfiguration.   The
+parameters are documented in the example configuration.  There are several
+required parameters including the EXTERNAL_IP_ADDRESS and DEVICE_LIST.
+EXTERNAL_IP_ADDRESS must be set to the *non-PPP*, IPv4 address of the host (and
+NOT the gateway) and can be set to "AUTO" to allow the script to make a guess.
+The DEVICE_LIST is a text string of devices to use to place (aircraft) or answer
+(ground station) calls.  In addition, the aircraft requires some specification of
+phone numbers to dial.
+
+The "host_configs/" directory contains three additional files for configuration.
+
+1) irc-network.conf
+
+irc-network.conf contains the UnrealIRCd formatted portion of the configuration
+typically used to configure attachment to the overall IRC network, and includes
+things such as cloak keys, network name, etc.  It should not contain the
+entirety of a UnrealIRCd config file as this file will be sourced by the more
+general config.
+
+2) irc-server.conf
+
+irc-server.conf contains the UnrealIRCd formatted portion of the configuration
+typically used to configure the current server and links.  Some of these
+parameters are automated using this script but can be hard coded in this file
+or altered as needed.  For a ground station, this file would also contain the
+information necessary to link back to the main IRC network.  Please consult
+your IRC network operator to register your ground stations.
+
+3) unrealircd.ssl.cnf
+
+Parameters for the self-signed UnrealIRCd SSL certificate can be altered using
+this file.
+
+IMPORTANT!!!  After altering any of these files it is necessary to run the
+reconfigure.sh script to install the changes.
+
+AUTOMATION
+==========
+
+Furthermore, touching the file "reconfigure" in the root directory will trigger
+a reconfigure on reboot.  This can help to automate ground stations which are
+virtualized with tools such as KVM.  The mptcp.host.config and host_configs/*
+files can be copied into a VM (at /home/nasa/baseline) and then /reconfigure
+set to allow a VM to reconfigure without the need for a console.
+
+KNOWN ISSUES AND LIMITATIONS
+============================
+
+There are several limitations due to the current kernel implementation of MPTCP:
+
+Currently, a single ground station can only support a single aircraft.  To
+support multiple missions, network name spaces would need to be created to
+isolate modem links and prevent MPTCP from adding subflows that cross aircraft.
+As an alternative to name spaces, virtualization can be used to achieve the same
+result.  These scripts support virtualization of the ground station for this
+very reason.  (Note, virtualization of the aircraft is not needed)
+
+The current implementation of MPTCP limits the number of interfaces to eight (8).
+The current code has only been tested with up to four interfaces.  There may be
+other limitations that further reduce the amount of PPP links that may be
+supported.  For example, if using KVM/QEMU - QEMU has a limitation of 4 serial
+ports.  Additional ports are supported by compiling QEMU from source (after
+altering the proper parts of the code).

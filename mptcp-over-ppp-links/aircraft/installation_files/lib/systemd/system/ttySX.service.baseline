@@ -1,0 +1,13 @@
+# ttySX
+# This service starts a call handler on /dev/ttySX
+
+[Unit]
+Description=Service to start a call
+Documentation=man:pppd(8)
+
+[Service]
+Restart=on-failure
+ExecStart=/usr/sbin/pppd call ttySX
+
+[Install]
+Alias=ttySX

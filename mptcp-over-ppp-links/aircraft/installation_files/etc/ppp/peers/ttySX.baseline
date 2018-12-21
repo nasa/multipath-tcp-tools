@@ -1,0 +1,26 @@
+/dev/ttySX
+debug
+record /var/log/ppp/ttySX.pppdump
+19200
+crtscts
+pap-restart 10
+pap-timeout 10
+lcp-restart 10
+lcp-max-configure 20
+lcp-echo-interval 30
+lcp-echo-failure 2
+noauth
+logfile /var/log/ppp/ttySX.log
+name nasa
+nobsdcomp
+noccp
+nodeflate
+passive
+noipdefault
+ipcp-accept-local
+ipcp-accept-remote
+linkname ttySX
+connect-delay 5000
+10.155.X.2:10.155.0.1
+connect '/usr/sbin/chat -v -f /etc/ppp/chat-ttySX'
+

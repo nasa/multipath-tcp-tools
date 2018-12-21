@@ -1,0 +1,22 @@
+# create RSA certs - Server
+
+RANDFILE = ssl.rnd
+
+[ req ]
+default_bits = 4096
+encrypt_key = yes
+distinguished_name = req_dn
+x509_extensions = cert_type
+prompt = no
+
+[ req_dn ]
+countryName = US
+stateOrProvinceName = State
+localityName = City
+organizationName = MPTCP PPP Experiment
+organizationalUnitName = MPTCP IRC Proxy
+commonName = aircraft-proxy
+
+[ cert_type ]
+nsCertType = server
+

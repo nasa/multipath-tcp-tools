@@ -1,0 +1,60 @@
+#!/bin/bash
+# -*- indent-tabs-mode: nil; tab-width: 4; -*-
+# vim: set expandtab tabstop=4:
+
+PPP_NUM=${PPP_IFACE:3}
+TABLE_NUM="20$PPP_NUM"
+
+iptables -A OUTPUT -p tcp ! -s $PPP_LOCAL/24 -o $PPP_IFACE -j REJECT --reject-with tcp-reset
+
+ifconfig $PPP_IFACE mtu 550 up
+tc qdisc add dev $PPP_IFACE root handle 1: tbf rate 2800 limit 1500 burst 1500
+tc qdisc add dev $PPP_IFACE parent 1:1 handle 10: sfq divisor 65536 depth 3 perturb 10 headdrop
+
+ip route del $PPP_REMOTE dev $PPP_IFACE proto kernel scope link src $PPP_LOCAL
+
+ip rule add from $PPP_LOCAL table $TABLE_NUM
+ip route add $PPP_REMOTE dev $PPP_IFACE table $TABLE_NUM initcwnd 1
+
+lockdir=/tmp/ppp_route_change.lock
+GOTLOCK=0
+while [ $GOTLOCK -eq 0 ]; do
+    if mkdir "$lockdir"
+    then
+        trap 'rm -rf "$lockdir"' 0
+        exec >> /var/log/ppp/ipupdown.log 2>&1
+        GOTLOCK=1
+    fi
+done
+
+echo "$PPP_IFACE on $PPP_TTY UP at $(date -u -Ins) local $PPP_LOCAL remote $PPP_REMOTE"
+
+DONE=0
+while [ $DONE -eq 0 ]; do
+    INTERFACES=($(ip -o link show | grep ppp | grep -v 'state DOWN' | awk '{print $2}' | sed 's/.$//'))
+    ROUTE_EXISTS=$(ip route show | grep 10.155.0.1)
+
+    if ! [ "$ROUTE_EXISTS" == "" ]
+    then
+        ROUTE_COMMAND="ip route change 10.155.0.1/32 scope global "
+    else
+        ROUTE_COMMAND="ip route add 10.155.0.1/32 scope global "
+    fi
+
+    for i in "${INTERFACES[@]}"
+    do
+        ROUTE_COMMAND="$ROUTE_COMMAND nexthop dev $i weight 1 "
+    done
+
+    $ROUTE_COMMAND
+    if [ $? -eq 0 ]
+    then
+        DONE=1
+    fi
+
+    VALUE=${#INTERFACES[@]}
+    VALUE2=$((VALUE*2800))
+    tc qdisc change dev tun0 root tbf rate $VALUE2 limit 1500 burst 1504
+done
+
+exit 0

@@ -1,0 +1,50 @@
+#!/bin/bash
+# -*- indent-tabs-mode: nil; tab-width: 4; -*-
+# vim: set expandtab tabstop=4:
+
+lockdir=/tmp/unreal_check.lock
+GOTLOCK=0
+while [ $GOTLOCK -eq 0 ]; do
+  if mkdir "$lockdir"; then
+    trap 'rm -rf "$lockdir"' 0
+    exec >> /var/log/ppp/unrealircd.assist.log 2>&1
+    GOTLOCK=1
+  else
+    sleep 1
+  fi
+done
+
+UNREAL_PID=$(pidof unrealircd)
+ESTABLISHED=$(netstat -nm |grep 4401|grep -c ESTABLISHED)
+NINTERFACES=$(ip -o link show | grep ppp | grep -vc 'state DOWN')
+
+if ! (( ESTABLISHED )) && (( NINTERFACES )); then
+  # Don't want to loop here as unreal can take a long time to connect
+  # If this kick doesn't work, oh well. The server will retry normally.
+  # However we don't want the action of other links coming up to send
+  # another HUP too early hence the lock.
+  echo "$(date -u -Ins) - Detected $NINTERFACES links and no UnrealIRCd connection detected."
+  if (( NINTERFACES == 1 )); then
+    # Let the lone interface have some time to get established
+    sleep 10
+  fi
+  echo "$(date -u -Ins) - Sending HUP to UnrealIRCd..."
+  kill -HUP ${UNREAL_PID} 2>/dev/null
+  # Hold lock for up to 3 mins (which is how long it may take over a single
+  # congested satellite link) to give this a chance to connect.
+  for loopcount in {1..4}; do
+    sleep 45
+    ESTABLISHED=$(netstat -nm |grep 4401|grep -c ESTABLISHED)
+    if (( ESTABLISHED )); then
+      break
+    fi
+  done
+  if (( ESTABLISHED )); then
+    echo "$(date -u -Ins) - UnrealIRCd connection detected."
+  else
+    echo "$(date -u -Ins) - UnrealIRCd connection not found. Slow link?"
+  fi
+  echo "$(date -u -Ins) - UnrealIRCd assist complete."
+fi
+
+exit 0

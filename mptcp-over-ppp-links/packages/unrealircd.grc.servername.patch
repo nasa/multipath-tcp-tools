@@ -1,0 +1,21 @@
+--- unrealircd-4.0.18.orig/src/modules/m_server.c	2018-06-23 10:11:32.000000000 -0400
++++ unrealircd-4.0.18.new/src/modules/m_server.c	2018-09-13 17:30:27.155574427 -0400
+@@ -263,6 +263,10 @@
+ 		 */
+ 
+ 		/* Actually we still need to double check the servername to avoid confusion. */
++		/* ... NASA Change: Actually we don't need this extra check - breaks our
++		 * PPP setup - suggest adding an option in the config which allows the user
++		 * to force the check if desired. */
++		/*
+ 		if (strcasecmp(servername, cptr->serv->conf->servername))
+ 		{
+ 			ircsnprintf(xerrmsg, sizeof(xerrmsg), "Outgoing connect from link block '%s' but server "
+@@ -275,6 +279,7 @@
+ 				cptr->serv->conf->servername, cptr->username, cptr->local->sockhost, xerrmsg, inpath);
+ 			return exit_client(cptr, sptr, &me, xerrmsg);
+ 		}
++		*/
+ 		link = cptr->serv->conf;
+ 		goto skip_host_check;
+ 	} else {

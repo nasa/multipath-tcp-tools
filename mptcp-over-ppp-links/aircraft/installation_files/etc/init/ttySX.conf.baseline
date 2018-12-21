@@ -1,0 +1,8 @@
+# ttySX
+# This service starts a call on /dev/ttySX
+
+#start on stopped rc RUNLEVEL=[2345]
+stop on starting rc RUNLEVEL=[!2345]
+
+respawn
+exec /usr/sbin/pppd call ttySX

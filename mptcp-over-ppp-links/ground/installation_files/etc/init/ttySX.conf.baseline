@@ -1,0 +1,8 @@
+# ttySX - mgetty
+# This service maintains mgetty on /dev/ttySX
+
+#start on stopped rc RUNLEVEL=[2345]
+stop on starting rc RUNLEVEL=[!2345]
+
+respawn
+exec /sbin/mgetty -n 2 ttySX

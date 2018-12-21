@@ -1,0 +1,13 @@
+debug
+record /var/log/ppp/ttySX.pppdump
+asyncmap 0
+netmask 255.255.254.0
+#proxyarp
+logfile /var/log/ppp/ttySX.log
+lcp-echo-interval 30
+lcp-echo-failure 2
+crtscts
+modem
+noauth
+linkname ttySX
+10.155.0.1:10.155.X.2

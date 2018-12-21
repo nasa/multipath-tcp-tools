@@ -1,0 +1,105 @@
+include "modules.default.conf";
+
+include "help/help.conf";
+include "badwords.conf";
+include "spamfilter.conf";
+include "operclass.default.conf";
+
+include "irc-server.conf";
+
+log "ircd.log" {
+	flags {
+		oper;
+		tkl;
+		kline;
+		connects;
+		server-connects;
+		kills;
+		errors;
+		sadmin-commands;
+		chg-commands;
+		oper-override;
+		spamfilter;
+	};
+};
+
+include "aliases/anope.conf";
+
+ban nick {
+	mask "*C*h*a*n*S*e*r*v*";
+	reason "Reserved for Services";
+};
+
+except ban {
+	/* don't ban stskeeps */
+	mask *stskeeps@212.*;
+};
+
+except tkl {
+	mask *@192.0.2.1;
+	type all;
+};
+
+deny dcc {
+	filename "*sub7*";
+	reason "Possible Sub7 Virus";
+};
+
+deny channel {
+	channel "*warez*";
+	reason "Warez is illegal";
+	class "clients";
+};
+
+/* NASA addition:
+ * Don't spin up new connection attempts when
+ * already established!
+ */
+deny link {
+  mask *;
+  rule directcon(*);
+  type auto;
+};
+
+/* Set/Adjust Ping Timeouts, etc */
+
+class clients
+{
+	pingfreq 90;
+	maxclients 1000;
+	sendq 200k;
+	recvq 8000;
+};
+
+class opers
+{
+	pingfreq 90;
+	maxclients 50;
+	sendq 1M;
+	recvq 8000;
+};
+
+class servers
+{
+	pingfreq 90;
+	connfreq 190; /* Aircraft: try to connect every 190 seconds */
+	maxclients 10; /* max servers */
+	sendq 5M;
+};
+
+/* Import Network configuration */
+
+include "irc-network.conf";
+
+/* NASA addition: Fix TLS timeouts over slow PPP
+ * links - handshake-timeout requires UnrealIRCd
+ * 4.0.16 or later or a source patch for earlier
+ * versions.  Adjust other timeouts as well.
+ */
+set {
+	ident {
+		read-timeout 60s;
+		connect-timeout 60s;
+	};
+  handshake-timeout "180";
+};

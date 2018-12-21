@@ -1,0 +1,56 @@
+#!/bin/bash
+# -*- indent-tabs-mode: nil; tab-width: 4; -*-
+# vim: set expandtab tabstop=4:
+
+ip route change $PPP_REMOTE dev $PPP_IFACE proto kernel src $PPP_LOCAL initcwnd 1
+ifconfig $PPP_IFACE mtu 550 up
+tc qdisc add dev $PPP_IFACE root handle 1: tbf limit 1500 burst 1500 rate 2.5kbit
+tc qdisc add dev $PPP_IFACE parent 1:1 handle 10: sfq divisor 65536 depth 3 perturb 10 headdrop
+
+lockdir=/tmp/ppp_route_change.lock
+GOTLOCK=0
+while [ $GOTLOCK -eq 0 ]; do
+    if mkdir "$lockdir"
+    then
+        trap 'rm -rf "$lockdir"' 0
+        exec >> /var/log/ppp/ipupdown.log 2>&1
+        GOTLOCK=1
+    fi
+done
+
+echo "$PPP_IFACE on $PPP_TTY UP at $(date -u -Ins) local $PPP_LOCAL remote $PPP_REMOTE"
+
+if [ -f /etc/ppp/network.config ]; then
+  . /etc/ppp/network.config
+fi
+AIRCRAFT_NETWORK=${AIRCRAFT_NETWORK:-"10.1.1.0/24"}
+
+DONE=0
+while [ $DONE -eq 0 ]; do
+    INTERFACES=($(ip -o link show | grep ppp | grep -v 'state DOWN' | awk '{print $2}' | sed 's/.$//'))
+    ROUTE_EXISTS=$(ip route show | grep ${AIRCRAFT_NETWORK})
+
+    if ! [ "$ROUTE_EXISTS" == "" ]
+    then
+        ROUTE_COMMAND="ip route change ${AIRCRAFT_NETWORK} scope global "
+    else
+        ROUTE_COMMAND="ip route add ${AIRCRAFT_NETWORK} scope global "
+    fi
+
+    for i in "${INTERFACES[@]}"
+    do
+        ROUTE_COMMAND="$ROUTE_COMMAND nexthop dev $i weight 1 "
+    done
+
+    $ROUTE_COMMAND
+    if [ $? -eq 0 ]
+    then
+        DONE=1
+    fi
+
+    VALUE=${#INTERFACES[@]}
+    VALUE2=$((VALUE*2800))
+    tc qdisc change dev tun0 root tbf rate $VALUE2 limit 1500 burst 1504
+done
+
+exit 0
