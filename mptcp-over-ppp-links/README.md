@@ -49,12 +49,12 @@ Installation tarballs can be made using make in the root directory (or can be do
 
 Copy the installation tarball to a fresh host and unpack.
 
-In the newly created directory there will be a script, system_prep.sh, which is used to prep the system, installing the needed kernels and packages.
+In the newly created directory there will be a script, `system_prep.sh`, which is used to prep the system, installing the needed kernels and packages.
 
 After the script completes, the system can be configured using:
-
+```
 sudo /home/nasa/baseline/reconfigure.sh
-
+```
 Please see the README file included in the installation tarball for specifics on configuration.
 
 
