@@ -8,7 +8,11 @@ The network-traffic-analysis-tools directory contains a collection of applicatio
 
 ### mptcp-over-ppp-links
 ---
-The mptcp-over-ppp-links directory contains the scripts and files needed to support the type of MPTCP over PPP tests used in this experiment.  Packages of these files are available in the downloads/releases section.  However, if you need the source or are curious as to which files are modified, this is the place to look.
+The mptcp-over-ppp-links directory contains the scripts and files needed to support the type of MPTCP over PPP tests used in this experiment.
+
+This resulting system leverages MPTCP to provide long-lived, responsive TCP connections that would have previously stalled or timed out using MLPPP.  The system as a whole provides better fairness, stability, and responsiveness, allowing multiple data flows to share the available resources equally and automatically.  It provides a more efficient and reliable communication channel.  This can be done without impacting the scientific payloads directly, changing only the ground station and aircraft gateway.
+
+Packages of these files are available in the downloads/releases section.  However, if you need the source or are curious as to which files are modified, this is the place to look.
 
 ### multipath-udp-proxy
 --- 
